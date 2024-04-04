@@ -1,2 +1,269 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Example</title>
+    <style>
+        #canvas {
+            border: 2px solid black; /* Dodaj ramkę do canvas */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <div id="canvasholder"></div>
+
+    <label for="shapeType">Choose Shape:</label>
+    <select id="shapeType">
+        <option value="0">Square</option>
+        <option value="1">Regular Pentagon</option>
+        <option value="2">Regular Hexagon</option>
+        <option value="3">Regular Pentadecagon</option>
+    </select>
+
+    <label for="colorChoice">Choose Color:</label>
+    <select id="colorChoice">
+        <option value="0">Random</option>
+        <option value="1">Red</option>
+        <option value="2">Green</option>
+        <option value="3">Blue</option>
+        <option value="4">Yellow</option>
+        <option value="5">Pink</option>
+        <option value="6">Purple</option>
+    </select>
+
+    <button id="clearButton">Clear</button>
+
+    <script>
+        "use strict";
+
+        var canvas;
+        var graphics;
+
+        function randomColorString() {
+            var r = Math.floor(256 * Math.random());
+            var g = Math.floor(256 * Math.random());
+            var b = Math.floor(256 * Math.random());
+            return "rgb(" + r + "," + g + "," + b + ")";
+        }
+
+        function clear() {
+            graphics.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function installMouseHandler() {
+            var dragging = false;
+            var startX, startY;
+            var prevX, prevY;
+            var colorChoice;
+            var shapeType;
+
+            function doMouseDown(evt) {
+                if (dragging) {
+                    return;
+                }
+                if (evt.button != 0) {
+                    return;
+                }
+                var x, y;
+                var r = canvas.getBoundingClientRect();
+                x = Math.round(evt.clientX - r.left);
+                y = Math.round(evt.clientY - r.top);
+                dragging = true;
+                if (dragging) {
+                    startX = prevX = x;
+                    startY = prevY = y;
+                    document.addEventListener("mousemove", doMouseMove, false);
+                    document.addEventListener("mouseup", doMouseUp, false);
+                }
+
+                colorChoice = Number(document.getElementById("colorChoice").value);
+                shapeType = Number(document.getElementById("shapeType").value);
+            }
+
+            function doMouseMove(evt) {
+                if (!dragging) {
+                    return;
+                }
+
+                var x, y;
+                var r = canvas.getBoundingClientRect();
+                x = Math.round(evt.clientX - r.left);
+                y = Math.round(evt.clientY - r.top);
+
+                if (Math.abs(x - prevX) + Math.abs(y - prevY) < 3) {
+                    return;
+                }
+
+                switch (colorChoice) {
+                    case 0:
+                        graphics.fillStyle = randomColorString();
+                        break;
+                    case 1:
+                        graphics.fillStyle = "red";
+                        break;
+                    case 2:
+                        graphics.fillStyle = "green";
+                        break;
+                    case 3:
+                        graphics.fillStyle = "blue";
+                        break;
+                    case 4:
+                        graphics.fillStyle = "yellow";
+                        break;
+                    case 5:
+                        graphics.fillStyle = "pink";
+                        break;
+                    case 6:
+                        graphics.fillStyle = "purple";
+                        break;
+                }
+
+                switch (shapeType) {
+                    case 0:
+                        drawSquare(x, y, 50); // Draw a square
+                        break;
+                    case 1:
+                        drawRegularPolygon(x, y, 5, 50); // Draw a regular pentagon
+                        break;
+                    case 2:
+                        drawRegularPolygon(x, y, 6, 50); // Draw a regular hexagon
+                        break;
+                    case 3:
+                        drawRegularPolygon(x, y, 15, 50); // Draw a regular pentadecagon
+                        break;
+                }
+
+                prevX = x;
+                prevY = y;
+            }
+
+            function doMouseUp(evt) {
+                if (!dragging) {
+                    return;
+                }
+
+                dragging = false;
+                document.removeEventListener("mousemove", doMouseMove, false);
+                document.removeEventListener("mouseup", doMouseMove, false);
+            }
+
+            canvas.addEventListener("mousedown", doMouseDown, false);
+        }
+
+        function addGraphicsContextExtras(graphics) {
+            graphics.strokeLine = function (x1, y1, x2, y2) {
+                this.beginPath();
+                this.moveTo(x1, y1);
+                this.lineTo(x2, y2);
+                this.stroke();
+            }
+            graphics.fillCircle = function (x, y, r) {
+                this.beginPath();
+                this.arc(x, y, r, 0, 2 * Math.PI, false);
+                this.fill();
+            }
+            graphics.strokeCircle = function (x, y, radius) {
+                this.beginPath();
+                this.arc(x, y, radius, 0, 2 * Math.PI, false);
+                this.stroke();
+            }
+            graphics.fillPoly = function () {
+                if (arguments.length < 6)
+                    return;
+                this.beginPath();
+                this.moveTo(arguments[0], arguments[1]);
+                for (var i = 2; i + 1 < arguments.length; i = i + 2) {
+                    this.lineTo(arguments[i], arguments[i + 1]);
+                }
+                this.closePath();
+                this.fill();
+            }
+            graphics.strokePoly = function () {
+                if (arguments.length < 4)
+                    return;
+                this.beginPath();
+                this.moveTo(arguments[0], arguments[1]);
+                for (var i = 2; i + 1 < arguments.length; i = i + 2) {
+                    this.lineTo(arguments[i], arguments[i + 1]);
+                }
+                this.closePath();
+                this.stroke();
+            }
+            graphics.fillOval = function (x, y, horizontalRadius, verticalRadius) {
+                this.save();
+                this.translate(x, y);
+                this.scale(horizontalRadius, verticalRadius);
+                this.beginPath();
+                this.arc(0, 0, 1, 0, 2 * Math.PI, false);
+                this.restore();
+                this.fill();
+            }
+            graphics.strokeOval = function (x, y, horizontalRadius, verticalRadius) {
+                this.save();
+                this.translate(x, y);
+                this.scale(horizontalRadius, verticalRadius);
+                this.beginPath();
+                this.arc(0, 0, 1, 0, 2 * Math.PI, false);
+                this.restore();
+                this.stroke();
+            }
+            graphics.getRGB = function (x, y) {
+                var color = this.getImageData(x, y, 1, 1);
+                return color.data;
+            }
+        }
+
+        function drawRegularPolygon(x, y, sides, size) {
+            graphics.beginPath();
+            graphics.moveTo(
+                x + size * Math.cos(0),
+                y + size * Math.sin(0));
+
+            for (var i = 1; i <= sides; i++) {
+                const nx = x + size * Math.cos(i * 2 * Math.PI / sides);
+                const ny = y + size * Math.sin(i * 2 * Math.PI / sides);
+                graphics.lineTo(nx, ny);
+            }
+
+            graphics.closePath();
+            graphics.fill();
+            graphics.stroke();
+        }
+
+        function drawSquare(x, y, size) {
+            graphics.fillRect(x - size / 2, y - size / 2, size, size);
+            graphics.strokeRect(x - size / 2, y - size / 2, size, size);
+        }
+
+        function doClear() {
+            clear();
+        }
+
+        function init() {
+            try {
+                canvas = document.getElementById("canvas");
+                graphics = canvas.getContext("2d");
+            } catch (e) {
+                document.getElementById("canvasholder").innerHTML =
+                    "<p>Canvas graphics is not supported.<br>" +
+                    "An error occurred while initializing graphics.</p>";
+                return;
+            }
+            addGraphicsContextExtras(graphics);
+            installMouseHandler();
+            graphics.fillStyle = "white";
+            graphics.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Clear Button
+            document.getElementById("clearButton").onclick = doClear;
+
+            // Set default color choice
+            document.getElementById("colorChoice").value = "0";
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
